@@ -318,4 +318,109 @@ AND winlog.event_data.TargetImage: *lsass.exe*
 - `TargetImage: *lsass.exe*` → Tylko dostęp do LSASS (można później filtrować po GrantedAccess jeśli chcesz).
 
 
+## Walkthrough – Lab 2 Moje cute querki z labu ʚ♡ɞ
+
+### 1. Procesy uruchamiane z folderu Downloads (podejrzane pobieranie i exec)
+```kql
+@timestamp >= "2022-11-08T00:00:00Z" AND @timestamp <= "2022-11-08T23:59:59Z" AND winlog.channel: "Microsoft-Windows-Sysmon/Operational" AND event.code: 1 AND process.executable: *Downloads*
+```
+- Łapie wszystko co się odpala prosto z folderu Downloads w ciągu całego dnia 08.11.2022 (klasyczny user-behavior po kliknięciu w złośliwy plik).
+
+### 2. Tworzenie pliku moviedownloader.exe (dropper/malware)
+```kql
+winlog.channel: "Microsoft-Windows-Sysmon/Operational" AND event.code: 11 AND file.path: *moviedownloader.exe*
+```
+- Sysmon EID 11 = FileCreate → ktoś właśnie upuścił na dysk plik o nazwie moviedownloader.exe (super podejrzana nazwa :3).
+
+### 3. Modyfikacja kluczy Run/RunOnce przez użytkownika cmurfy (persistence)
+```kql
+winlog.channel: "Microsoft-Windows-Sysmon/Operational"  AND event.code: 13 AND registry.key: *Run* AND related.user: "cmurfy"
+```
+- EID 13 = Registry value set → użytkownik cmurfy właśnie dodał coś do autostartu (klasyczna technika persistence).
+
+### 4. Uruchomienie dowolnego pliku .bat (batch skrypt = często złośliwy)
+```kql
+winlog.channel: "Microsoft-Windows-Sysmon/Operational"  AND event.code: 1 AND process.command_line : *.bat*
+```
+- Łapie każdy proces którego command line zawiera .bat → bardzo częste przy atakach lolbin/living-off-the-land.
+
+### 5. Proces o konkretnym PID 7932 (śledzenie konkretnego procesu)
+```kql
+winlog.channel: "Microsoft-Windows-Sysmon/Operational"  AND event.code: 1 AND process.pid: 7932 
+```
+- Szukamy dokładnie procesu o PID 7932 (przydatne kiedy już wiemy który proces jest zły).
+
+### 6. PowerShell uruchomiony z PID 6024 (podejrzany PowerShell)
+```kql
+winlog.channel: "Microsoft-Windows-Sysmon/Operational"  AND event.code: 1 AND process.pid: 6024 AND process.executable: *powershell.exe
+```
+- Konkretna instancja PowerShella o PID 6024 → idealnie do pivotowania po znanym złym PID.
+
+### 7. Nowa usługa systemowa (Service Installed) na hoście DC-01
+```kql
+winlog.event_id : 7045 AND agent.name: "DC-01"
+```
+- Windows Event ID 7045 = nowa usługa została zainstalowana, a host to DC-01 (często wykorzystywane do persistence przez atakujących).
+
+### 8. Wykonanie PsExec (ten sam co wcześniej, ale trochę inna składnia ♡)
+```kql
+winlog.channel: "Microsoft-Windows-Sysmon/Operational"  AND event.code: 1  AND process.executable: (*PsExec.exe OR *PsExec64.exe)
+```
+- Łapie uruchomienie PsExec/PsExec64 (lateral movement klasyk~).
+
+
 ## Network Threat Hunting
+
+### Lab 1
+
+```kql
+agent.type: "packetbeat" AND type: dns AND NOT dns.response_code: "NOERROR"
+```
+> Szuka zapytań DNS, które zwróciły błąd inny niż NOERROR (np. REFUSED, SERVFAIL)
+
+```kql
+agent.type: "packetbeat" AND type: dns AND dns.response_code: "NXDOMAIN"
+```
+> Szuka zapytań DNS, które zwróciły NXDOMAIN (domena nie istnieje)
+
+### Lab 2
+
+```kql
+agent.type : "packetbeat" and type:"dns"  
+```
+> Podstawowe filtrowanie wszystkich zapytań DNS z Packetbeat (bez dodatkowego warunku)
+
+```kql
+winlog.channel : "Microsoft-Windows-Sysmon/Operational" AND dns.question.registered_domain : "downloadmoviesonline.shop" AND event.code : "22"
+```
+> Sysmon event 22 (DNS query) zawierający zarejestrowaną domenę downloadmoviesonline.shop
+
+```kql
+winlog.channel : "Microsoft-Windows-Sysmon/Operational" AND dns.question.name: "downloadmoviesonline.shop" AND event.code : "22"
+```
+> Sysmon event 22 z dokładnym zapytaniem o downloadmoviesonline.shop
+
+```kql
+winlog.channel : "Microsoft-Windows-Sysmon/Operational" AND event.code : "3" and destination.ip: "3.210.135.57"
+```
+> Sysmon event 3 (Network connection) do konkretnego IP 3.210.135.57
+
+```kql
+winlog.channel : "Microsoft-Windows-Sysmon/Operational" AND event.code : "1" and process.name: powershell.exe
+```
+> Sysmon event 1 (Process creation) gdzie proces to powershell.exe
+
+```kql
+event.category: "network" AND event.module : "endpoint" AND destination.port : 8000 AND network.protocol : ("http" OR "https")
+```
+> Połączenia sieciowe na port 8000 po HTTP lub HTTPS z modułu endpoint
+
+```kql
+@timestamp>= "2022-11-13T12:45:40Z" AND @timestamp<= "2022-11-13T23:59:59Z" AND winlog.event_id: 7045 AND agent.name :"DC-01"
+```
+> Nowe usługi (event 7045) utworzone na hoście DC-01 w konkretnym przedziale czasowym
+
+```kql
+winlog.event_id: 4624 AND agent.name :"DC-01"
+```
+> Logowania (event 4624) na serwerze DC-01
