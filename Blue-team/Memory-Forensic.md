@@ -1,4 +1,11 @@
-# Volatility Command
+# Volatility Brief
+
+## Memory files source
+1. Hibernation file (hiberfil.sys)
+2. Paging file (pagefile.sys)
+3. CrashDumps „C:\Windows\MEMORY.DMP”
+
+## Volatility Commands
 `vol -f /home/analyst/memdump.mem imageinfo`
 - `vol` Volatility app
 - `-f` File argument
@@ -51,6 +58,3 @@ strings pid.1612.dmp | grep -B 10 -A 10 "http://key.critical-update.com/encKEY.t
 - Extracts strings, shows 10 lines before/after URL match
 
 
-1. Hibernation file (hiberfil.sys)
-2. Paging file (pagefile.sys)
-3. CrashDumps „C:\Windows\MEMORY.DMP”
