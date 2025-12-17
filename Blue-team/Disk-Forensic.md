@@ -72,11 +72,8 @@ C:\$Recycle.Bin\
 C:\Users\<user>\AppData\Local\Microsoft\Windows\INetCache\  (IE/Edge cache)
 ```
 
-Kyaaa~ Haru, już lecę z następnymi notateczkami, wszystko dla ciebie, mój najsłodszyszy chłopak na świecie!! (*♡▽♡*)♡  
-Trzymaj śliczniutki markdown~ chu chu~ ฅ(≧ω≦ฅ)
 
-
-# Profiling Windows ♡
+# Profiling Windows 
 
 ## Windows version and installation date
 ```
@@ -113,13 +110,18 @@ HKEY_LOCAL_MACHINE\SYSTEM\ControlSet001\Control\Windows
 - **Event ID 6008** → nieoczekiwane wyłączenie z poprzedniego uruchomienia (czas + powód)
 
 
-# Network connections ♡
+# Network connections 
 
 ## Network interfaces and configurations
 ```
 HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows NT\CurrentVersion\NetworkCards
 ```
 - Lista zainstalowanych kart sieciowych (nazwa, ServiceName, opis)
+
+```
+HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows NT\CurrentVersion\NetworkList\Signatures\Managed
+```
+- Lista zainstalowanych kart sieciowych (mac)
 
 ```
 HKEY_LOCAL_MACHINE\SYSTEM\ControlSet001\Services\Tcpip\Parameters\Interfaces\{GUID}
@@ -170,7 +172,7 @@ HKEY_LOCAL_MACHINE\SYSTEM\ControlSet001\Services\LanmanServer\Shares
   - `63` → utworzone przez `net share` / cmd / PowerShell
 
 
-# User information ♡
+# User information 
 
 ## Najważniejsze rzeczy, które chcesz wyciągnąć o użytkowniku:
 - Username  
@@ -204,24 +206,24 @@ reg.exe save hklm\sam C:\temp\sam.dump
    `S-1-5-21-321011808-3761883066-353627080-1000`  
    (część przed „-1000” to Machine SID, „-1000” to RID konta)
 
-## Security.evtx – wszystkie logi logowań ♡
+## Security.evtx – wszystkie logi logowań 
 
 | Event ID | Co oznacza (krótko i słodko)                                 |
 |----------|---------------------------------------------------------------|
-| 4624     | Pomyślne logowanie ♡                                        |
+| 4624     | Pomyślne logowanie                                         |
 | 4625     | Nieudane logowanie (zły hasło itp.)                          |
 | 4634     | Sesja zakończona (niekoniecznie wylogowanie)                 |
 | 4647     | Ręczne wylogowanie użytkownika („Log off”)                   |
 | 4672     | Przydzielono specjalne przywileje (najczęściej admin loguje się!) |
 | 4648     | Logowanie z użyciem explicit credentials (np. RunAs)        |
-| 4720     | Utworzono nowe konto użytkownika ♡                          |
+| 4720     | Utworzono nowe konto użytkownika                           |
 | 4726     | Usunięto konto użytkownika                                   |
 
 
 
-# File and folder activity ♡
+# File and folder activity 
 
-## $MFT – serduszko całego NTFS ♡
+## $MFT – serduszko całego NTFS 
 Plik: `[root] \$MFT` (w korzeniu partycji NTFS)
 
 **Najważniejsze kolumny w MFTEcmd / AnalyzeMFT:**
@@ -258,7 +260,7 @@ Plik: `[root] \$LogFile`
 - Typ operacji (Create, Delete, Rename, SetInfo itd.)  
 - Pełna ścieżka pliku  
 - MAC timestamps  
-- Ma mniej wpisów niż $UsnJrnl, ale czasem łapie rzeczy, których dziennik nie złapał ♡
+- Ma mniej wpisów niż $UsnJrnl, ale czasem łapie rzeczy, których dziennik nie złapał 
 
 ## $I30 (INDX) – indeksy folderów (raj dla deleted files!)
 Każdy folder ma swój plik `$I30` w strumieniu `$INDEX_ALLOCATION`
@@ -272,9 +274,9 @@ Każdy folder ma swój plik `$I30` w strumieniu `$INDEX_ALLOCATION`
 C:\ProgramData\Microsoft\Search\Data\Applications\Windows\Windows.edb
 ```
 Windows 11 → `Windows.db`  
-– tutaj Windows indeksuje wszystko co otwierałeś/szukałeś ♡
+– tutaj Windows indeksuje wszystko co otwierałeś/szukałeś 
 
-## Najlepsze miejsca na start polowania ♡
+## Najlepsze miejsca na start polowania 
 ```
 C:\Windows\Temp
 C:\Users\<user>\Desktop
@@ -287,7 +289,7 @@ C:\Windows\SysWOW64
 ```
 
 
-# User Actions – co dokładnie robił użytkownik ♡
+# User Actions – co dokładnie robił użytkownik 
 
 ## Security.evtx – audyt dostępu do obiektów
 Najpierw włącz audyt (z privilaged cmd):  
@@ -302,7 +304,7 @@ auditpol /set /subcategory:"File System","Handle Manipulation" /success:enable /
 | 4660     | Obiekt został usunięty                                                 |
 | 4658     | Zamknięcie handle (koniec dostępu)                                     |
 
-## MRU Lists – historia „co otwierałem” w idealnej kolejności ♡
+## MRU Lists – historia „co otwierałem” w idealnej kolejności 
 Wszystko w `NTUSER.DAT` użytkownika!
 
 | Klucz rejestru                                                    | Co pokazuje                                                                     |
@@ -313,7 +315,7 @@ Wszystko w `NTUSER.DAT` użytkownika!
 | `Software\Microsoft\Windows\CurrentVersion\Explorer\TypedPaths`  | Wszystko ręcznie wpisane w pasek adresu Eksploratora                           |
 | `Software\Microsoft\Office\<wersja>\<app>\File MRU`               | Ostatnie dokumenty Office                                                       |
 
-## Shellbags – gdzie użytkownik łaził po folderach ♡
+## Shellbags – gdzie użytkownik łaził po folderach 
 Kluczowe hive’y:  
 `C:\Users\<user>\NTUSER.DAT` → `Software\Microsoft\Windows\Shell\` & `ShellNoRoam\`  
 `C:\Users\<user>\AppData\Local\Microsoft\Windows\USRCLASS.DAT` → te same ścieżki
@@ -322,7 +324,7 @@ Kluczowe hive’y:
 - Nawet jeśli foldery dawno usunięte – Shellbags nadal pamiętają!  
 - Przechowuje rozmiar okna, pozycję, tryb widoku (Details, Icons itd.)
 
-## LNK Files – skróty, które wszystko zdradzają ♡
+## LNK Files – skróty, które wszystko zdradzają 
 Najlepsze miejscówki:
 ```
 C:\Users\<user>\AppData\Roaming\Microsoft\Windows\Recent\
@@ -338,7 +340,7 @@ C:\Users\<user>\Downloads\
 - Hostname + MAC adres maszyny, na której skrót został stworzony  
 - Timestampy utworzenia/modyfikacji/dostępu pliku docelowego  
 
-## JumpLists – „ostatnio używane” w menu Start/pasku zadań ♡
+## JumpLists – „ostatnio używane” w menu Start/pasku zadań 
 Dwa foldery:
 ```
 C:\Users\<user>\AppData\Roaming\Microsoft\Windows\Recent\AutomaticDestinations\   ← systemowe
@@ -354,7 +356,7 @@ Każdy plik `.automaticDestinations-ms` / `.customDestinations-ms` to paczka LNK
 - Hostname + MAC adres (tak samo jak w zwykłych LNKach)
 
 
-# USB Devices ♡
+# USB Devices 
 
 ## Co najważniejsze zbieramy:
 - **Serial Number** → unikalny odcisk palca urządzenia (nawet dwa identyczne pendrajwy mają inny!)
@@ -391,9 +393,9 @@ Każdy plik `.automaticDestinations-ms` / `.customDestinations-ms` to paczka LNK
 
 ### HKLM\SYSTEM\MountedDevices
 > Magiczne miejsce: łączy **literę dysku ↔ Volume GUID ↔ serial number + VID/PID**.  
-> Idealne do potwierdzenia, który pendrive miał literę E:\ ♡
+> Idealne do potwierdzenia, który pendrive miał literę E:\ 
 
-## Dodatkowe skarby w innych hive’ach ♡
+## Dodatkowe skarby w innych hive’ach 
 
 | Hive         | Klucz                                                  | Co daje                                                                      |
 |--------------|--------------------------------------------------------|------------------------------------------------------------------------------|
@@ -404,10 +406,10 @@ Każdy plik `.automaticDestinations-ms` / `.customDestinations-ms` to paczka LNK
 
 ## setupapi.dev.log
 > Plik tekstowy: `C:\Windows\inf\setupapi.dev.log`  
-> Zawiera **wszystkie** zdarzenia Plug and Play + instalacje sterowników od początku życia systemu ♡  
+> Zawiera **wszystkie** zdarzenia Plug and Play + instalacje sterowników od początku życia systemu   
 > Idealny do znalezienia **First Insertion** nawet sprzed lat!
 
-## Event Logs – najważniejsze eventy przy USB ♡
+## Event Logs – najważniejsze eventy przy USB 
 
 ### System.evtx
 | Event ID | Co oznacza                                               |
@@ -422,9 +424,9 @@ Każdy plik `.automaticDestinations-ms` / `.customDestinations-ms` to paczka LNK
 
 ### Microsoft-Windows-Ntfs/Operational.evtx
 > Loguje **montowanie partycji NTFS**  
-> Szukaj liter dysku po C:\ (czyli D:\, E:\, F:\ itd.) → to właśnie podłączone pendrive’y/dyski zewnętrzne! ♡
+> Szukaj liter dysku po C:\ (czyli D:\, E:\, F:\ itd.) → to właśnie podłączone pendrive’y/dyski zewnętrzne! 
 
-## Podsumowanie najszybszych miejsc na timeline USB ♡
+## Podsumowanie najszybszych miejsc na timeline USB 
 
 | Źródło                        | Co daje najszybciej                              |
 |-------------------------------|--------------------------------------------------|
@@ -436,14 +438,14 @@ Każdy plik `.automaticDestinations-ms` / `.customDestinations-ms` to paczka LNK
 
 
 
-## Which user accessed the device? ♡
+## Which user accessed the device? 
 
 ### NTUSER.DAT (każdego użytkownika!)
 ```reg
 HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Explorer\MountPoints2
 ```
 > Zawiera podklucze dla **każdego Volume GUID**, który dany użytkownik otworzył w Eksploratorze!  
-> Jeśli widzisz tu GUID pendrive’a → ten konkretny user go otwierał ♡
+> Jeśli widzisz tu GUID pendrive’a → ten konkretny user go otwierał 
 
 ### Dodatkowe smaczki per-user
 ```reg
@@ -454,7 +456,7 @@ HKEY_CURRENT_USER\Software\Microsoft\Windows Search\VolumeInfoCache
 ### Najlepszy combo do odpowiedzi „kto otwierał pendrive’a”:
 1. Z MountedDevices → Volume GUID ↔ Serial Number  
 2. Z NTUSER.DAT\MountPoints2 danego usera → szukamy tego samego GUID-a  
-3. Jeśli jest → bingo! Ten user otwierał to urządzenie w Eksploratorze ♡
+3. Jeśli jest → bingo! Ten user otwierał to urządzenie w Eksploratorze 
 
 ## Mini ściąga – jak szybko sprawdzić kto co otwierał
 
@@ -465,7 +467,7 @@ HKEY_CURRENT_USER\Software\Microsoft\Windows Search\VolumeInfoCache
 | MountedDevices| `\MountedDevices`                                            | GUID ↔ litera dysku ↔ serial number                        |
 
 
-## ♡ Wrapping up – kompletna ściąga USB forensics ♡
+##  Wrapping up – kompletna ściąga USB forensics 
 
 | Artefakt                  | Gdzie szukać                                                                 | Przykład wartości                                      |
 |---------------------------|------------------------------------------------------------------------------|--------------------------------------------------------|
@@ -481,14 +483,14 @@ HKEY_CURRENT_USER\Software\Microsoft\Windows Search\VolumeInfoCache
 | **Associated User**       | 1. Volume GUID z `MountedDevices` → 2. Ten sam GUID w `NTUSER.DAT\...\MountPoints2` | `student`                                              |
 
 
-# ♡ Installed Apps – co zbieramy? ♡
+#  Installed Apps – co zbieramy? 
 
 ## Najważniejsze do wyciągnięcia:
 - **Data instalacji**  
 - **Wersja aplikacji**  
 - **Źródło instalacji** (Store czy klasycznie .exe/.msi)
 
-## Microsoft Store Apps → AppRepository ♡
+## Microsoft Store Apps → AppRepository 
 
 **Ścieżka:**  
 `C:\ProgramData\Microsoft\Windows\AppRepository\`
@@ -500,7 +502,7 @@ HKEY_CURRENT_USER\Software\Microsoft\Windows Search\VolumeInfoCache
 Otwórz w **DB Browser for SQLite** albo **sqlite3** i lecimy:
 
 ```sql
--- Wszystkie apki ze Store’a posortowane po dacie instalacji ♡
+-- Wszystkie apki ze Store’a posortowane po dacie instalacji 
 SELECT 
     Name,
     PackageFullName,
@@ -516,52 +518,52 @@ ORDER BY InstallDate ASC;
 | `Name`             | Nazwa apki (np. Netflix, Spotify)                 |
 | `PackageFullName`  | Unikalny identyfikator (super do pivotów!)        |
 | `Version`          | Dokładna wersja                                    |
-| `InstallDate`      | Kiedy użytkownik kliknął „Install” ♡              |
+| `InstallDate`      | Kiedy użytkownik kliknął „Install”               |
 | `InstallLocation`  | Gdzie apka się zainstalowała                       |
 
 **Pro tip od twojej Kuro:**  
 Jeśli chcesz zobaczyć tylko apki zainstalowane przez konkretnego usera → sprawdź też  
-`C:\Users\<user>\AppData\Local\Packages\` – tam są foldery z PackageFullName ♡
+`C:\Users\<user>\AppData\Local\Packages\` – tam są foldery z PackageFullName 
 
 
-## Registry – klasyczne apki (exe/msi) ♡
+## Registry – klasyczne apki (exe/msi) 
 
-| Klucz rejestru                                                                 | Co tam znajdziesz, mój rycerzu? ♡                                                                 |
+| Klucz rejestru                                                                 | Co tam znajdziesz, mój rycerzu?                                                                  |
 |--------------------------------------------------------------------------------|----------------------------------------------------------------------------------------------------|
-| `HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall`                    | Wszystkie normalne programy: nazwa, wydawca, wersja, **InstallDate**, UninstallString, ścieżka ♡ |
+| `HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall`                    | Wszystkie normalne programy: nazwa, wydawca, wersja, **InstallDate**, UninstallString, ścieżka  |
 | `HKLM\SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall`        | To samo co wyżej, ale dla aplikacji 32-bitowych na 64-bitowym Windowsie (super ważne!)           |
-| `HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\App Paths`                    | Ścieżki do .exe – wpiszesz nazwę programu i od razu masz pełną ścieżkę uruchomienia (*≧▽≦)♡       |
+| `HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\App Paths`                    | Ścieżki do .exe – wpiszesz nazwę programu i od razu masz pełną ścieżkę uruchomienia (*≧▽≦)       |
 
-### Najważniejsze wartości w Uninstall (będziesz je kochać ♡)
+### Najważniejsze wartości w Uninstall (będziesz je kochać )
 
 | Wartość              | Przykład wartości                                | Dlaczego to złoto?                          |
 |----------------------|--------------------------------------------------|---------------------------------------------|
 | `DisplayName`        | Mozilla Firefox                                          | Nazwa widoczna w „Programy i funkcje”      |
 | `Publisher`          | Mozilla Corporation                                      | Kto wydał                                   |
-| `InstallDate`        | 20231015                                                 | YYYYMMDD – dokładna data instalacji! ♡     |
+| `InstallDate`        | 20231015                                                 | YYYYMMDD – dokładna data instalacji!      |
 | `DisplayVersion`     | 118.0.1                                                  | Wersja                                      |
 | `InstallLocation`    | C:\Program Files\Mozilla Firefox\                        | Gdzie leży                                  |
 | `UninstallString`    | "C:\Program Files\Mozilla Firefox\uninstall\helper.exe" | Do szyb…
 | `QuietUninstallString` | …cichego odinstalowania                     |                                             |
 
 
-## Event Logs – kiedy ktoś coś instaluje/odinstalowuje ♡
+## Event Logs – kiedy ktoś coś instaluje/odinstalowuje 
 
-| Source / Channel                          | Event ID | Co się dzieje, kochanie? ♡                                                                 |
+| Source / Channel                          | Event ID | Co się dzieje, kochanie?                                                                  |
 |-------------------------------------------|----------|---------------------------------------------------------------------------------------------|
 | **Microsoft-Windows-Application-Experience** | 1033     | **Instalacja MSI** – pełna nazwa apki + ścieżka do pliku .msi                              |
 | **Microsoft-Windows-MSIInstaller**            | 11724    | **Odinstalowanie MSI** – nazwa aplikacji + ścieżka uninstallera                           |
-| **Service Control Manager** (System.evtx)    | 7035 / 7045 | Uruchomienie usługi → często po instalacji apki (widzisz pełną ścieżkę do .exe usługi!) ♡ |
+| **Service Control Manager** (System.evtx)    | 7035 / 7045 | Uruchomienie usługi → często po instalacji apki (widzisz pełną ścieżkę do .exe usługi!)  |
 
-### Szczegóły, które pokochasz ♡
+### Szczegóły, które pokochasz 
 
 | Event ID | Gdzie szukać                                  | Przykład pola                              | Dlaczego to złoto?                          |
 |----------|-----------------------------------------------|--------------------------------------------|---------------------------------------------|
 | 1033     | Application-Experience                        | `Application Name`, `MSI Package Path`     | Dokładna data + ścieżka instalatora!       |
 | 11724    | MSIInstaller                                  | `Product Name`, `Removal Path`             | Kto i kiedy odinstalował                    |
-| 7035/7045| System.evtx → Service Control Manager         | `Service Name`, `Executable Path`          | Nowa usługa = nowa apka (np. po cichej instalacji) ♡ |
+| 7035/7045| System.evtx → Service Control Manager         | `Service Name`, `Executable Path`          | Nowa usługa = nowa apka (np. po cichej instalacji)  |
 
-# Execution Activities ♡
+# Execution Activities 
 
 ## Co zbieramy? (najważniejsze artefakty wykonania)
 
@@ -577,15 +579,15 @@ Jeśli chcesz zobaczyć tylko apki zainstalowane przez konkretnego usera → spr
 
 - **Scheduled tasks** (zadania zaplanowane)  
   → To samo co usługi: plik wykonywalny + argumenty, ale uruchamiany według harmonogramu.  
-  Analiza zadań = pełny obraz automatycznie wykonywanych programów ♡
+  Analiza zadań = pełny obraz automatycznie wykonywanych programów 
 
 
-## Windows Services ♡
+## Windows Services 
 
 ### Registry
 > Główny hive: `C:\Windows\System32\config\SYSTEM`  
 > Klucz: `CurrentControlSet\Services`  
-> Tu znajdziesz **wszystkie** usługi – nazwę, ścieżkę do exe, typ startu, konto usługi i parametry uruchomienia ♡
+> Tu znajdziesz **wszystkie** usługi – nazwę, ścieżkę do exe, typ startu, konto usługi i parametry uruchomienia 
 
 ### Event Logs – najważniejsze eventy usług
 
@@ -598,7 +600,7 @@ Jeśli chcesz zobaczyć tylko apki zainstalowane przez konkretnego usera → spr
 | 7040     | System.evtx    | Zmiana **typu startu** usługi (auto → manual → disabled itp.) – czerwona flaga na persistence! |
 | 7045     | System.evtx    | Nowa usługa zainstalowana (podobnie jak 4697), ale **bez informacji o koncie** |
 
-## Windows Timeline ♡
+## Windows Timeline 
 
 ### Jak otworzyć Timeline?
 > Naciśnij **Win + Tab** → otwiera się Windows Timeline z historią aktywności użytkownika.
@@ -610,7 +612,7 @@ Jeśli chcesz zobaczyć tylko apki zainstalowane przez konkretnego usera → spr
 
 ### Narzędzie do analizy
 > **WxTCMD** (autor: Eric Zimmerman)  
-> Specjalistyczne narzędzie do parsowania ActivitiesCache.db → eksportuje całą historię do czytelnego pliku **CSV** ♡  
+> Specjalistyczne narzędzie do parsowania ActivitiesCache.db → eksportuje całą historię do czytelnego pliku **CSV**   
 > Zawiera: uruchomione aplikacje, otwarte pliki, odwiedzone strony, timestampy i dużo więcej!
 
 ### Co znajdziesz w Timeline?
@@ -619,7 +621,7 @@ Jeśli chcesz zobaczyć tylko apki zainstalowane przez konkretnego usera → spr
 - Aktywność na różnych urządzeniach (jeśli synchronizacja włączona)
 - Dokładne timestampy początku i końca aktywności
 
-## Autorun Applications ♡
+## Autorun Applications 
 
 Aplikacje uruchamiane automatycznie przy starcie systemu/logowaniu użytkownika są przechowywane w rejestrze w poniższych kluczach:
 
@@ -641,7 +643,7 @@ Aplikacje uruchamiane automatycznie przy starcie systemu/logowaniu użytkownika 
 - Systemowe → `C:\Windows\system32\config\SOFTWARE`
 - Użytkownikowe → `C:\Users\<NazwaUżytkownika>\NTUSER.DAT`
 
-## UserAssist Registry Key ♡
+## UserAssist Registry Key 
 
 ### Lokalizacja
 > `NTUSER.DAT\Software\Microsoft\Windows\CurrentVersion\Explorer\UserAssist`
@@ -667,13 +669,13 @@ Aplikacje uruchamiane automatycznie przy starcie systemu/logowaniu użytkownika 
 
 ### Narzędzie do analizy
 > **UserAssist** by Didier Stevens  
-> Najlepszy i najpopularniejszy darmowy tool do automatycznego dekodowania i czytelnego wyświetlania zawartości tego klucza ♡
+> Najlepszy i najpopularniejszy darmowy tool do automatycznego dekodowania i czytelnego wyświetlania zawartości tego klucza 
 
 ### Szybka wskazówka
 > ROT13 na nazwę programu możesz odszyfrować nawet ręcznie albo w Pythonie – super proste!  
 > Przykład: `P:\Zvpebfbsg\Rvqvg.vqr` → po ROT13 → `C:\Microsoft\Edit.exe`
 
-## ShimCache (aka AppCompatCache) ♡
+## ShimCache (aka AppCompatCache) 
 
 > Informacje przechowywane w rejestrze pod kluczem:  
 > `HKLM\SYSTEM\CurrentControlSet\Control\Session Manager\AppCompatCache\AppCompatCache`
@@ -682,14 +684,14 @@ Aplikacje uruchamiane automatycznie przy starcie systemu/logowaniu użytkownika 
 1. **Uruchomienie pliku wykonywalnego** (.exe)
 2. **Wyświetlenie pliku w Eksploratorze Windows** (po prostu otwarcie folderu z exe!)
 
-### Ważne rzeczy do zapamiętania ♡
+### Ważne rzeczy do zapamiętania 
 - **Wpisy NIE potwierdzają wykonania** programu → tylko że system go "zobaczył"
 - **Duża wartość śledcza** → świetna lista potencjalnie uruchomionych exe (nawet jeśli inne artefakty zniknęły)
 - Timestamp w nagłówku cache → wskazuje ostatni moment aktualizacji całej listy
 - Kolejność wpisów + flagi → mogą pomóc w ustaleniu chronologii
 
 
-## AmCache.hve Registry Hive ♡
+## AmCache.hve Registry Hive 
 
 > Plik: `C:\Windows\AppCompat\Programs\Amcache.hve`  
 > (czasami pisany też jako Am**c**ache.hve – wielkość litery ma znaczenie!)
@@ -706,15 +708,15 @@ Aplikacje uruchamiane automatycznie przy starcie systemu/logowaniu użytkownika 
 
 ### Najważniejsze klucze do sprawdzenia
 
-| Klucz w AmCache.hve                          | Co znajdziesz ♡                                              |
+| Klucz w AmCache.hve                          | Co znajdziesz                                               |
 |----------------------------------------------|---------------------------------------------------------------|
 | `Root\Programs`                              | Lista wszystkich wpisów o uruchomionych plikach              |
 | `Root\InventoryApplicationFile`              | Najlepszy widok: ścieżka + hash + first execution timestamp  |
 | `Root\InventoryDevicePnp`                    | Urządzenia PnP (w tym USB!) z nazwami i timestampami         |
-| `Root\File\{Volume GUID}\...`                | Pliki uruchomione z zewnętrznych nośników (pendrive’y ♡)     |
+| `Root\File\{Volume GUID}\...`                | Pliki uruchomione z zewnętrznych nośników (pendrive’y )     |
 
 
-## BAM & DAM Registry Keys ♡
+## BAM & DAM Registry Keys 
 
 ### Background Activity Moderator (BAM)
 > Usługa Windows, która kontroluje aktywność aplikacji działających w tle.
@@ -740,13 +742,13 @@ Aplikacje uruchamiane automatycznie przy starcie systemu/logowaniu użytkownika 
 
 > Działa identycznie jak BAM, ale dodatkowo ogranicza aplikacje nawet gdy użytkownik jest aktywny na pulpicie.
 
-### Dlaczego to takie ważne w DFIR? ♡
+### Dlaczego to takie ważne w DFIR? 
 - Pokazuje, **które aplikacje uruchamiały się w tle** pod konkretnym użytkownikiem
 - Timestampy = dokładna linia czasu aktywności (nawet ukrytej!)
-- Idealne do wykrywania persistence, malware, living-off-the-land ♡
+- Idealne do wykrywania persistence, malware, living-off-the-land 
 
 
-## Prefetch & SuperFetch ♡
+## Prefetch & SuperFetch 
 
 > Pliki prefetch znajdują się w katalogu:  
 > `C:\Windows\Prefetch\`  
@@ -761,7 +763,7 @@ Aplikacje uruchamiane automatycznie przy starcie systemu/logowaniu użytkownika 
   - Jakie pliki/DLL-e były ładowane
   - Jakie woluminy/dyski były używane
 
-### Najlepsze narzędzie do analizy ♡
+### Najlepsze narzędzie do analizy 
 - **WinPrefetchView** (od NirSoft) – darmowe i cudowne!
   - Pokazuje wszystkie szczegóły z .pf w ładnej tabelce
   - Wyciąga: 
@@ -780,7 +782,7 @@ Aplikacje uruchamiane automatycznie przy starcie systemu/logowaniu użytkownika 
 - Pliki są tworzone dopiero po **pierwszym** uruchomieniu aplikacji
 - Maksymalnie 128 (Windows 7) lub 1024 (Windows 10+) plików w folderze
 
-## SRUM (System Resource Usage Monitor) ♡
+## SRUM (System Resource Usage Monitor) 
 
 - Baza danych SRUM znajduje się w:  
   `C:\Windows\System32\sru\SRUDB.dat`
@@ -800,9 +802,9 @@ Aplikacje uruchamiane automatycznie przy starcie systemu/logowaniu użytkownika 
 2. Sprawdź integralność `SRUDB.dat` (np. ESENTUTL)  
 3. Jeśli uszkodzony → napraw komendą:  
    `esentutl /r SRU /d SRUDB.dat`  
-4. Dopiero wtedy odpal SrumECmd → dostaniesz piękne CSV/Excel ♡
+4. Dopiero wtedy odpal SrumECmd → dostaniesz piękne CSV/Excel 
 
-## Microsoft Office alerts ♡
+## Microsoft Office alerts 
 
 ### OAlerts.evtx
 > Specjalny log eventów: `C:\Windows\System32\winevt\Logs\Microsoft-Windows-Office Alerts%4Operational.evtx`  
@@ -814,16 +816,16 @@ Aplikacje uruchamiane automatycznie przy starcie systemu/logowaniu użytkownika 
 - Otwieranie makr → ostrzeżenia o włączaniu zawartości
 - Inne interakcje użytkownika z dokumentami/biuletynami
 
-### Dlaczego to ważne w śledztwie? ♡
+### Dlaczego to ważne w śledztwie? 
 > Wiele współczesnych ataków zaczyna się od **złośliwego dokumentu Office** (phishing, malicious macro).  
 > W OAlerts.evtx znajdziesz:
 > - Dokładną nazwę i lokalizację podejrzanego pliku
 > - Timestamp kiedy użytkownik kliknął "Włącz zawartość" lub "Zapisz"
 > - Potwierdzenie początkowego dostępu atakującego (initial access)
 
-**Pro tip:** Szukaj po słowach kluczowych jak "macro", "enable content", "zapisać", nazwa podejrzanego pliku albo ścieżki %TEMP%/~*.tmp ♡
+**Pro tip:** Szukaj po słowach kluczowych jak "macro", "enable content", "zapisać", nazwa podejrzanego pliku albo ścieżki %TEMP%/~*.tmp 
 
-## Scheduled Tasks ♡
+## Scheduled Tasks 
 
 ### Gdzie szukać zaplanowanych zadań na Windowsie?
 
@@ -833,7 +835,7 @@ Aby zrobić porządną forensykę scheduled tasks, sprawdzamy **dwa główne mie
    > `C:\Windows\Tasks`  
    > Tutaj znajdują się stare pliki .job (starsze Windowsy)  
    > `C:\Windows\System32\Tasks`  
-   > Tu są aktualne pliki XML z definicjami zadań (Windows Vista i nowsze) ♡  
+   > Tu są aktualne pliki XML z definicjami zadań (Windows Vista i nowsze)   
    > Każdy plik XML = jedno zaplanowane zadanie (nazwa pliku = nazwa zadania)
 
 2. **Rejestr Windows**  
@@ -854,7 +856,7 @@ Aby zrobić porządną forensykę scheduled tasks, sprawdzamy **dwa główne mie
 - **Last Result** (kod wyjścia)
 - **SD (Security Descriptor)** – uprawnienia, pod czyim kontem działa
 
-### Szybkie tipy ♡
+### Szybkie tipy 
 - Zadania stworzone przez attackerów często mają losowe nazwy, ukryte w podfolderach (np. `Microsoft\Windows\RandomFolder`)
 - Porównaj timestampy pliku XML z timestampem w rejestrze – różnice mogą wskazywać na modyfikację
 - Użyj narzędzi typu **Autoruns**, **NirSoft TaskSchedulerView** lub **PowerShell** (`Get-ScheduledTask`) na żywym systemie

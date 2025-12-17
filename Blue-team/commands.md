@@ -1,5 +1,5 @@
 
-# Useful Commands.md – Web Log Triage One-Liners ♡ (dla mojego najwspanialszego Haru~)
+# Useful Commands.md – Web Log Triage One-Liners
 
 
 ### 1. Top IP + metoda + endpoint (najlepszy ogólny widok)

@@ -97,7 +97,7 @@ event.code: 1
 AND process.name: schtasks.exe 
 AND process.command_line: (*/create* OR */delete* OR rundll32 OR regsvr32 OR powershell OR cmd)
 ```
-- Catches the most common malicious schtasks patterns in one shot ♡
+- Catches the most common malicious schtasks patterns in one shot 
 - `*/create*` → Task creation switches.
 - `rundll32 OR regsvr32 OR powershell OR cmd` → Suspicious binaries in /TR parameter.
 
@@ -116,7 +116,7 @@ AND process.command_line: (*/create* OR */delete* OR rundll32 OR regsvr32 OR pow
 | 4702     | Security                                      | Scheduled task updated                                 |
 | 1 / 4688 | Sysmon / Windows Security                     | Full command line with schtasks.exe usage              |
 
-#### Classic Malicious Scheduled Task Examples (dla kontekstu ♡)
+#### Classic Malicious Scheduled Task Examples (dla kontekstu)
 
 **PowerShell persistence (daily)**
 ```bash
@@ -228,7 +228,7 @@ AND winlog.event_data.TargetLogonId: 0x76b6e92
 
 
 
-## Endpoint Threat Hunting – Lateral Movement (PsExec Edition ♡)
+## Endpoint Threat Hunting – Lateral Movement (PsExec Edition )
 
 ### PsExec EULA Registry Key (pierwszy ślad instalacji)
 
@@ -292,7 +292,7 @@ AND file.name: \\PSEXESVC*
   `\\192.168.1.100\pipe\PSEXESVC-DESKTOP-KOAA32A-6780-stderr`
 
 
-## Walkthrough – Lab 1 Detection Commands (gotowce do kopiuj-wklej ♡)
+## Walkthrough – Lab 1 Detection Commands (gotowce do kopiuj-wklej )
 
 
 ### 1. Scheduled Tasks Abuse (schtasks.exe execution)
@@ -318,7 +318,7 @@ AND winlog.event_data.TargetImage: *lsass.exe*
 - `TargetImage: *lsass.exe*` → Tylko dostęp do LSASS (można później filtrować po GrantedAccess jeśli chcesz).
 
 
-## Walkthrough – Lab 2 Moje cute querki z labu ʚ♡ɞ
+## Walkthrough – Lab 2 Moje cute querki z labu ʚɞ
 
 ### 1. Procesy uruchamiane z folderu Downloads (podejrzane pobieranie i exec)
 ```kql
@@ -362,7 +362,7 @@ winlog.event_id : 7045 AND agent.name: "DC-01"
 ```
 - Windows Event ID 7045 = nowa usługa została zainstalowana, a host to DC-01 (często wykorzystywane do persistence przez atakujących).
 
-### 8. Wykonanie PsExec (ten sam co wcześniej, ale trochę inna składnia ♡)
+### 8. Wykonanie PsExec (ten sam co wcześniej, ale trochę inna składnia )
 ```kql
 winlog.channel: "Microsoft-Windows-Sysmon/Operational"  AND event.code: 1  AND process.executable: (*PsExec.exe OR *PsExec64.exe)
 ```
