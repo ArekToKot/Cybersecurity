@@ -58,3 +58,11 @@ strings pid.1612.dmp | grep -B 10 -A 10 "http://key.critical-update.com/encKEY.t
 - Extracts strings, shows 10 lines before/after URL match
 
 
+## speed-up
+
+vol -f .\memory.dmp imageinfo
+vol -f .\memory.dmp --profile=Win10x64_17763 kdbgscan
+vol -f .\memory.dmp --profile=Win10x64_17763 -g 0xf80132d32de8 pslist
+
+$ python vol.py -f cve2011_0611.dmp --profile=WinXPSP3x86 evtlogs -v --save-evt -D output/
+ python.exe .\evtxdumper.py --image .\Server.raw --profile Win10x64_17763 --kdbg 0xf80132d32de8 --outdir OUTDIR
