@@ -248,3 +248,11 @@ Here are some top locations where malicious files may reside on Windows:
     AppData: This folder contains application data and settings for each user. Malware may store and execute malicious code in this folder to evade detection.
     Startup: Malware may add itself to the Startup folder to execute automatically when the system starts up.
     Documents: This is another common location where users store important files. Malware may infect these files to spread to other systems or hold them for ransom.
+## speed-up
+
+vol -f .\memory.dmp imageinfo
+vol -f .\memory.dmp --profile=Win10x64_17763 kdbgscan
+vol -f .\memory.dmp --profile=Win10x64_17763 -g 0xf80132d32de8 pslist
+
+$ python vol.py -f cve2011_0611.dmp --profile=WinXPSP3x86 evtlogs -v --save-evt -D output/
+ python.exe .\evtxdumper.py --image .\Server.raw --profile Win10x64_17763 --kdbg 0xf80132d32de8 --outdir OUTDIR
