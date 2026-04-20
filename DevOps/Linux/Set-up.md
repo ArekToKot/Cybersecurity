@@ -8,7 +8,7 @@
 ``` bash copy
 #!/bin/bash
 # gpg key fix
-sudo wget https://archive.kali.org/archive-keyring.gpg -O /usr/share/keyrings/kali-archive-keyring.gpg
+#sudo wget https://archive.kali.org/archive-keyring.gpg -O /usr/share/keyrings/kali-archive-keyring.gpg
 sudo apt update
 
 sudo apt install flatpak plasma-discover-backend-flatpak plasma-discover keepassxc libreoffice libreoffice-kf5 -y
@@ -34,4 +34,12 @@ sudo systemctl start postgresql && systemctl status postgresql && sudo msfdb rei
 # next run armitage
 armitage
 
+```
+
+## Remove GRUB timeout
+
+``` bash
+sudo nano /etc/default/grub
+# change timeout to 0
+update-grub
 ```

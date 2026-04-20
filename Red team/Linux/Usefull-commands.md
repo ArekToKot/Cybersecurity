@@ -89,3 +89,26 @@ WantedBy=multi-user.target
 ```
 - Starts the `evil` service immediately.
 - `start`: Runs the service.
+
+### Linux Filesystem Hierarchy (FHS) - Kali Linux
+
+| Directory     | Description |
+|---------------|-------------|
+| `/bin/`       | Basic programs and essential user command binaries. |
+| `/boot/`      | Kali Linux kernel and other files required for its early boot process. |
+| `/dev/`       | Device files (representing hardware devices). |
+| `/etc/`       | System-wide configuration files. |
+| `/home/`      | User's personal files and home directories. |
+| `/lib/`       | Basic shared libraries and kernel modules. |
+| `/media/`     | Mount points for removable media (CD/DVD-ROM, USB keys, etc.). |
+| `/mnt/`       | Temporary mount point for mounting filesystems manually. |
+| `/opt/`       | Optional / extra applications provided by third parties. |
+| `/root/`      | Administrator's (root) personal files. |
+| `/run/`       | Volatile runtime data that does not persist across reboots. |
+| `/sbin/`      | System administration programs (system binaries). |
+| `/srv/`       | Data used by services hosted on this system. |
+| `/tmp/`       | Temporary files (often emptied at boot). |
+| `/usr/`       | User applications and utilities. Further subdivided into `bin/`, `sbin/`, `lib/`, etc.<br>`/usr/share/` contains architecture-independent data.<br>`/usr/local/` is for manually installed applications by the administrator. |
+| `/var/`       | Variable data handled by services (logs, queues, spools, caches, etc.). |
+| `/proc/`      | Virtual filesystem used by the kernel to export data to user space (not part of FHS). |
+| `/sys/`       | Virtual filesystem for kernel and device information (not part of FHS). |
