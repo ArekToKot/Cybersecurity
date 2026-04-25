@@ -23,6 +23,17 @@ flatpak remote-add --if-not-exists flathub https://dl.flathub.org/repo/flathub.f
 flatpak install flathub dev.vencord.Vesktop -y
 flatpak install flathub com.vscodium.codium -y
 
+# signal and spotify
+wget -O- https://updates.signal.org/desktop/apt/keys.asc | gpg --dearmor > signal-desktop-keyring.gpg;
+cat signal-desktop-keyring.gpg | sudo tee /usr/share/keyrings/signal-desktop-keyring.gpg > /dev/null
+wget -O signal-desktop.sources https://updates.signal.org/static/desktop/apt/signal-desktop.sources;
+cat signal-desktop.sources | sudo tee /etc/apt/sources.list.d/signal-desktop.sources > /dev/null
+
+curl -sS https://download.spotify.com/debian/pubkey_5384CE82BA52C83A.asc | sudo gpg --dearmor --yes -o /etc/apt/trusted.gpg.d/spotify.gpg
+echo "deb https://repository.spotify.com stable non-free" | sudo tee /etc/apt/sources.list.d/spotify.list
+
+sudo apt update && sudo apt install signal-desktop spotify-client spotify-client-qt
+
 # unpack rockyou and resert
 sudo gzip -d /usr/share/wordlists/rockyou.txt.gz
 reboot now
@@ -41,7 +52,6 @@ Armitage is a GUI version of Metasploit
 sudo systemctl start postgresql && systemctl status postgresql && sudo msfdb reinit && sudo teamserver 10.14.84.79 1234
 # next run armitage
 armitage
-
 ```
 
 ## Remove GRUB timeout
@@ -50,7 +60,6 @@ sudo nano /etc/default/grub
 # GRUB_TIMEOUT=0
 sudo update-grub
 ```
-
 
 ## Remove i801 error
 ``` bash
