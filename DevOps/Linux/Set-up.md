@@ -61,6 +61,12 @@ sudo nano /etc/default/grub
 sudo update-grub
 ```
 
+## Install printers service
+``` bash copy
+sudo apt install cups
+sudo systemctl start cups
+```
+
 ## Remove i801 error
 ``` bash
 sudo nano /etc/modprobe.d/i2c-i801.conf
