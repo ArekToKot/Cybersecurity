@@ -108,7 +108,7 @@ unshadow passwd shadow > unshadowed
 
 ## Crack Kerberos TGT with Hashcat
 ```bash copy
-hashcat -m 13100 -a 0 hash.txt /usr/share/wordlists/rockyou.txt --force
+hashcat -m 13100 -a 0 hash.txt /usr/share/wordlists/rockyou.txt --force -O
 ```
 - Cracks a Kerberos TGT hash using hashcat.
 - `-m 13100`: Specifies Kerberos TGT hash format.
@@ -116,3 +116,4 @@ hashcat -m 13100 -a 0 hash.txt /usr/share/wordlists/rockyou.txt --force
 - `hash.txt`: Specifies the hash file.
 - `/usr/share/wordlists/rockyou.txt`: Specifies the wordlist.
 - `--force`: Forces hashcat to run despite warnings.
+- `-O`: Use hashcat optimized kernels.
