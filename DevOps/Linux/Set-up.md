@@ -75,3 +75,10 @@ sudo nano /etc/modprobe.d/i2c-i801.conf
 # blacklist i2c_i801
 sudo update-initramfs -u
 ```
+
+## Virtualbox repair
+access USB fix & karnel headers fix
+``` bash copy
+sudo usermod -aG vboxusers $USER
+sudo apt install -y dkms virtualbox-dkms linux-headers-$(uname -r)
+```
