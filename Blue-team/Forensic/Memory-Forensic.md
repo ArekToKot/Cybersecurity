@@ -1,258 +1,254 @@
-# Volatility Brief
+# Memory Forensics — Volatility Reference
 
-## Memory files source
-1. Hibernation file (hiberfil.sys)
-2. Paging file (pagefile.sys)
-3. CrashDumps „C:\Windows\MEMORY.DMP”
+Reference for analyzing Windows memory images (RAM captures, hibernation files, page files, crash dumps) with Volatility 2/3. For disk-side artifacts that complement these findings (registry hives, MFT, event logs) see [Disk-Forensic.md](Disk-Forensic.md).
 
-## Volatility Commands
-`vol -f /home/analyst/memdump.mem imageinfo`
-- `vol` Volatility app
-- `-f` File argument
-- `memdump.mem` Memory dump path
-- `imageinfo` Memory dump info module
+## Tools
 
-Volatility modules
+| Tool | Platform | Link |
+|---|---|---|
+| Volatility 2 | Windows / Linux / macOS | [GitHub](https://github.com/volatilityfoundation/volatility) |
+| Volatility 3 | Windows / Linux / macOS | [GitHub](https://github.com/volatilityfoundation/volatility3) |
+| MemProcFS | Windows / Linux | [GitHub](https://github.com/ufrisk/MemProcFS) |
 
-Module name | About
----|---
-Windows.cmdline|Lists process command line arguments
-windows.drivermodule|Determines if any loaded drivers were hidden by a rootkit
-Windows.filescan|Scans for file objects present in a particular Windows memory image
-Windows.getsids|Print the SIDs owning each process
-Windows.handles|Lists process open handles
-Windows.info|Show OS & kernel details of the memory sample being analyzed
-Windows.netscan|Scans for network objects present in a particular Windows memory image
-Widnows.netstat|Traverses network tracking structures present in a particular Windows memory image.
-Windows.mftscan|Scans for Alternate Data Stream
-Windows.pslist|Lists the processes present in a particular Windows memory image
-Windows.pstre|List processes in a tree based on their parent process ID
+---
 
-## File and MFT Analysis
-```bash copy
-vol -f memdump.mem windows.filescan > filescan_out
-cat filescan_out | grep updater
-```
-- Dumps file objects to file, filters for "updater"
+## Memory Image Sources
+
+| Source | Path | Notes |
+|---|---|---|
+| Hibernation file | `C:\hiberfil.sys` | Compressed RAM snapshot taken at hibernation; convert first with `vol.py -f hiberfil.sys imagecopy` (Vol2) |
+| Page file | `C:\pagefile.sys` | Data swapped out of RAM — supplements a live RAM capture, doesn't replace it |
+| Crash dump | `C:\Windows\MEMORY.DMP` | Full or kernel memory dump written after a BSOD |
+| Live RAM capture | `memory.dmp` / `.raw` / `.vmem` | Acquired with FTK Imager, DumpIt, `winpmem`, or a hypervisor snapshot |
+
+## Volatility Command Syntax
+
+Volatility 2 requires an explicit `--profile`:
 
 ```bash copy
-vol -f memdump.mem windows.mftscan.MFTScan > mftscan_out
-cat mftscan_out | grep updater
+vol.py -f memory.dmp --profile=<profile> <plugin> [plugin options]
 ```
-- Dumps MFT scan to file, filters for "updater"
+
+Volatility 3 auto-detects the operating system and does not need a profile:
+
+```bash copy
+vol3 -f memory.dmp <plugin> [plugin options]
+```
+
+| Vol 2 plugin | Vol 3 plugin | Purpose |
+|---|---|---|
+| `imageinfo` | `windows.info` | Identify OS profile/version |
+| `pslist` | `windows.pslist` | List running processes (linked-list walk) |
+| `pstree` | `windows.pstree` | Process tree (parent/child) |
+| `psscan` | `windows.psscan` | Pool-scan for processes (finds hidden/terminated) |
+| `psxview` | — (combine `pslist`/`psscan`) | Cross-reference process-listing methods |
+| `netscan` | `windows.netscan` | Network connections and listeners |
+| `printkey` | `windows.registry.printkey` | Dump a registry key |
+| `svcscan` | `windows.svcscan` | List Windows services |
+| `mftparser` | `windows.mftscan.MFTScan` | Scan memory for `$MFT` entries |
+| `procdump` | `windows.dumpfiles` / `windows.pslist --dump` | Dump a process's executable image |
+
+---
+
+## OS Info
+
+### Imageinfo Plugin (Volatility 2)
+
+```bash copy
+vol.py -f memory.dmp imageinfo
+```
+
+Suggests the `--profile` value (OS version, build, and architecture) needed for every other Volatility 2 plugin. Volatility 3 doesn't need this step — `windows.info` auto-detects the profile.
+
+### kdbgscan Plugin (Volatility 2)
+
+```bash copy
+vol.py -f memory.dmp kdbgscan
+```
+
+Locates the Kernel Debugger Block (`KDBG`) directly rather than guessing. Use this when `imageinfo` returns multiple candidate profiles, or when the suggested profile produces empty output from `pslist`/`pstree`.
+
+---
+
+## Windows Processes
+
+### PSLIST
+
+```bash copy
+vol.py -f memory.dmp --profile=<profile> pslist
+```
+
+- Walks the kernel's `PsActiveProcessHead` doubly-linked list of `_EPROCESS` structures.
+- Reports PID, PPID, thread/handle counts, and process create/exit times.
+- **Limitation**: a process unlinked from this list (DKOM-style hiding) is invisible to `pslist` — cross-check with `psscan` and `psxview`.
+
+### PSTREE
+
+```bash copy
+vol.py -f memory.dmp --profile=<profile> pstree
+```
+
+- Same underlying data as `pslist`, rendered as a parent/child tree.
+- Useful for spotting a suspicious child process under an unexpected parent — e.g. `winword.exe` spawning `powershell.exe` or `cmd.exe`.
+
+### PSXVIEW
+
+```bash copy
+vol.py -f memory.dmp --profile=<profile> psxview
+```
+
+- Cross-references multiple process-enumeration methods (`pslist`, `psscan`, thread scanning, session enumeration, etc.) in a single table.
+- A process present in `psscan` but **absent from `pslist`** is a strong indicator of process hiding via DKOM or a similar technique.
+
+### PSINFO
+
+```bash copy
+vol.py -f memory.dmp --profile=<profile> psinfo
+```
+
+- Provides detailed metadata for a single process: full command line, parent PID, session ID, and associated security identifiers.
+
+### Process Privileges — GETSIDS Plugin
+
+```bash copy
+vol.py -f memory.dmp --profile=<profile> getsids -p <PID>
+```
+
+- Lists the SIDs (user, group, and privilege SIDs) attached to a process's access token.
+- A normal user-context process holding `S-1-5-18` (SYSTEM) or `S-1-5-32-544` (Administrators) is a red flag for privilege escalation or token theft/impersonation.
+
+---
+
+## Network Connections
+
+### Connections — NETSCAN Plugin
+
+```bash copy
+vol.py -f memory.dmp --profile=<profile> netscan
+```
+
+Pool-scans for `_TCP_ENDPOINT` / `_UDP_ENDPOINT` structures, so it finds connections even after they've closed — unlike the older `connections`/`connscan` plugins, which only walk live lists.
+
+| Field | Meaning |
+|---|---|
+| `Offset(P)` | Physical memory offset of the structure — useful for manual carving/verification |
+| `Proto` | Protocol and address family (TCPv4, UDPv6, etc.) |
+| `Local Address` | Local IP:port |
+| `Foreign Address` | Remote IP:port |
+| `State` | TCP state (`ESTABLISHED`, `LISTENING`, `CLOSED`, `TIME_WAIT`, …) |
+| `PID` / `Owner` | Owning process ID and image name |
+| `Created` | Timestamp the socket was opened, if recoverable |
+
+**Tip:** Cross-reference `PID`/`Owner` against `pstree`. A `LISTENING` socket owned by an unexpected process (e.g. `notepad.exe`) is a strong indicator of a backdoor or injected listener.
+
+---
+
+## Persistence
+
+### Volatility printkey Plugin
+
+```bash copy
+vol.py -f memory.dmp --profile=<profile> printkey -K "<registry key path>"
+```
+
+Dumps the live in-memory values of a registry key. Because it reflects the registry's **current** in-memory state, it can show changes made since boot that haven't yet been flushed to the on-disk hive.
+
+### Common Persistence-Related Keys
+
+**SOFTWARE hive (machine-wide):**
+
+| Key | Notes |
+|---|---|
+| `Microsoft\Windows\CurrentVersion\Run` / `RunOnce` | Autostart entries applied to all users |
+| `Microsoft\Windows NT\CurrentVersion\Winlogon` (`Shell`, `Userinit`) | Shell or logon-script hijacking |
+| `Microsoft\Windows NT\CurrentVersion\Windows` (`AppInit_DLLs`) | DLLs injected into every process that loads `user32.dll` |
+
+**NTUSER.DAT hive (per user):**
+
+| Key | Notes |
+|---|---|
+| `Software\Microsoft\Windows\CurrentVersion\Run` / `RunOnce` | Autostart entries for this user only |
+| `Software\Microsoft\Windows NT\CurrentVersion\Windows` (`Load`, `Run`) | Legacy per-user autostart values |
+
+For Scheduled Tasks and Windows Services as persistence vectors, see [Execution-Evidence.md](Execution-Evidence.md#scheduled-tasks) and the `svcscan` plugin below.
+
+### Volatility svcscan Plugin
+
+```bash copy
+vol.py -f memory.dmp --profile=<profile> svcscan
+```
+
+Lists Windows services known to the Service Control Manager at capture time — service name, display name, state, and binary path. Useful for spotting a malicious service that has since been stopped or deleted from disk but is still resident in memory structures.
+
+---
+
+## Files
+
+### Master File Table (MFT)
+
+Fragments of the on-disk `$MFT` are frequently cached in memory and can be recovered even when the disk image is unavailable or has been wiped.
+
+### MFT Parser Plugin
+
+```bash copy
+vol.py -f memory.dmp --profile=<profile> mftparser
+```
+
+Scans memory for `$MFT` record signatures and extracts:
+
+| Attribute | Meaning |
+|---|---|
+| `$STANDARD_INFORMATION` | Created/Modified/Accessed/MFT-Modified timestamps (the "SI" set — easily timestomped) |
+| `$FILE_NAME` | A second, independent timestamp set plus the file's name (the "FN" set) |
+| `$DATA` | The file's content, if resident (small files only) |
+
+### Investigation of MFT
+
+When triaging recovered MFT entries, prioritize paths commonly used by malware for staging and persistence:
+
+```
+C:\Windows\Temp
+C:\Users\<user>\Downloads
+C:\Program Files\<unexpected vendor folder>
+C:\Windows\System32 / SysWOW64
+C:\Users\<user>\AppData\
+C:\Users\<user>\AppData\Roaming\Microsoft\Windows\Start Menu\Programs\Startup
+C:\Users\<user>\Documents
+```
+
+---
 
 ## Process Memory Dump
-```bash copy
-vol -f memdump.mem -o . windows.memmap --dump --pid 1612
-```
-- Dumps memory map for PID 1612 to current directory
 
 ```bash copy
-strings pid.1612.dmp | less
+vol.py -f memory.dmp --profile=<profile> procdump -p <PID> -D C:\cases\out\
 ```
-- Extracts strings from PID 1612 dump, views in pager
+
+Extracts the executable image of a specific process from memory — use this to recover a packed or injected payload that exists only in RAM, then hand it off to [../Malware-Analysis/Static-Analysis.md](../Malware-Analysis/Static-Analysis.md).
+
+---
+
+## Quick Triage Workflow
 
 ```bash copy
-strings pid.1612.dmp | grep -B 10 -A 10 "http://key.critical-update.com/encKEY.txt"
+# 1. Identify the OS profile
+vol.py -f memory.dmp imageinfo
+vol.py -f memory.dmp kdbgscan          # if imageinfo is ambiguous
+
+# 2. Enumerate processes
+vol.py -f memory.dmp --profile=<profile> pslist
+vol.py -f memory.dmp --profile=<profile> pstree
+vol.py -f memory.dmp --profile=<profile> psxview   # cross-check for hidden processes
+
+# 3. Check network state
+vol.py -f memory.dmp --profile=<profile> netscan
+
+# 4. Check persistence
+vol.py -f memory.dmp --profile=<profile> svcscan
+vol.py -f memory.dmp --profile=<profile> printkey -K "Microsoft\Windows\CurrentVersion\Run"
+
+# 5. Extract Windows Event Logs from memory
+vol.py -f memory.dmp --profile=<profile> evtlogs --save-evt
 ```
-- Extracts strings, shows 10 lines before/after URL match
 
-
-# OS Info
-
-## Imageinfo Plugin
-    OS version and build number
-    OS architecture (32-bit or 64-bit)
-    OS service pack level
-
-
-vol -f /home/analyst/memdump.mem imageinfo
-
-1. Suggested Profiles
-2. Image date and time
-## kdbgscan Plugin
-
-vol -f /home/analyst/memdump.mem --profile=Win10x64_17134 kdbgscan
-1. Pick one of the suggested Windows 10 profiles and use it with the kdbgscan plugin.
-2. Note down the address/offset of 'KdCopyDataBlock'
-
-vol -f /home/analyst/memdump.mem --profile=Win10x64_17134 -g 0xf8031ce954d8 pslist
-
-# Windows Processes
-## Processes list: PSLIST
-vol -f /home/analyst/memdump.mem --profile=Win10x64_17134 -g 0xf8031ce954d8 pslist
-
-    Offset (V): the process address in memory.
-    Name: the name of the process.
-    PID: process ID.
-    PPID: parent process ID.
-    Thds: number of threads this process started.
-    Hnds: Processes use handles to interact with objects such as files, registry keys, and other processes. By analyzing the number and type of handles open by a process, a forensic investigator can gain insight into the resources that a process accessed.
-    Sess: when a user logs onto a Windows system, a new session is created for that user. 
-    Wow64: indicates whether a process is running as a 32-bit process on a 64-bit operating system.
-    Start: process start time used to determine the timeline of events and help reconstruct activities performed on the system.
-    Exit: process termination time.
-
-## Parent-child relationship: PSTREE
-vol -f /home/analyst/memdump.mem --profile=Win10x64_17134 -g 0xf8031ce954d8 pstree
-vol -f /home/analyst/memdump.mem --profile=Win10x64_17134 -g 0xf8031ce954d8 pstree -v
-The verbose mode of PSTREE (-v) lists detailed information about the running process, such as:
-    Audit: shows the full path to the application on disk. An application running from an unusual location should be considered suspicious. 
-    Cmd: shows the command line used to start the process. Look for processes with suspicious command lines.
-    Path: like the audit field, it shows the full path to the application on disk.
-
-## Hidden Processes - PSXVIEW
-PSXVIEW utilizes list walking and brute-forcing techniques to list discovered processes across seven different views: pslist, psscan, thrdproc, pspcid, csrss, session, and deskthrd. 
-vol -f /home/analyst/memdump.mem --profile=Win10x64_17134 -g 0xf8031ce954d8 psxview
-Let's have a look at how to use PSXVIEW in a typical investigation:
-    The first step is to check the entries in the pslist column. All PSLIST hidden processes (i.e., FALSE) are good candidates for further investigation. However, not every PSLIST hidden process should be assumed malicious. Some legit situations may result in a process not being detected using some methods (e.g., terminated processes). 
-    Looking at the rest of the methods, you can see that the 'CCDrootkit.exe' process is hidden in all views except csrss and session.
-    The next step is to record the address of the suspicious process (CCDrootkit.exe) identified in previous steps (0x0000000030584080). This is for further examination using PSINFO, which we will discuss later.
-
-## PSINFO Plugin
-vol -f /home/analyst/memdump.mem --profile=Win10x64_17134 -g 0xf8031ce954d8 psinfo -o 0x0000000030584080
-
-    The first step is to run PSINFO against the 'CCDrootkit' process offset/address you have from PSXVIEW.
-    Process Information: as you can see, we have many helpful process details in one place, such as PID, parent process, creation time, and Command-Line.
-    VAD and PEB comparison: This part retrieves process details from two locations, VAD (Virtual Address Descriptor) and PEB (Process Environment Block), to check for anomalies.
-    VAD (Virtual Address Descriptor) and PEB (Process Environment Block) are data structures used in the memory management of Windows operating systems. VADs track the memory allocated to a process, while PEBs contain information about the process, such as its loaded modules, command line arguments, environment variables, and more. While VADs and PEBs are related, they serve different purposes in memory management and contain different types of information.
-    Similar Processes: other discovered processes with the same name.
-    Suspicious Memory Regions: This part lists memory regions that contain malicious code.
-
-## Process privileges - GETSIDS plugin
-vol -f /home/analyst/memdump.mem --profile=Win10x64_17134 -g 0xf8031ce954d8 getsids -o 0x0000000030584080
-The GETSIDS Volatility plugin extracts and display the security identifiers (SIDs) of all user accounts that have started a process.
-
-# Network connections
-## Connections - netscan plugin
-vol -f /home/analyst/memdump.mem --profile=Win10x64_17134 -g 0xf8031ce954d8 netscan
-
-
-    Offset(P): contains the physical memory address where the network connection structure is stored in the memory dump.
-    Proto: indicates the protocol type and IP version being used.
-    Local address: the IP address and port number of the local system (the machine you're analyzing). You may encounter these formats:
-        IP Address:Port (e.g., 192.168.1.100:8080) - The service is bound to a specific network interface with its IP address and listening on the specified port.
-        0.0.0.0:Port - The service is listening on all available IPv4 interfaces.
-        :::Port - The service is listening on all available IPv6 interfaces.
-        ::1:Port - The service is using the IPv6 loopback address.
-
-From a forensic perspective, services listening on 0.0.0.0 or :: represent potential attack surfaces since they're accessible from the network, while loopback addresses indicate local-only services.
-
-    Foreign address: the remote IP address and port number of the connection endpoint (the system on the other end of the connection). For established connections, you'll see the actual remote IP and port. For UDP connections, this column typically shows *:* because UDP is connectionless.
-
-    State: shows the current state of TCP connections:
-        LISTENING - The service is waiting for incoming connection requests
-        ESTABLISHED - An active connection is currently open and data can be transmitted
-        CLOSE_WAIT - The remote side has closed the connection, waiting for the local application to close
-        TIME_WAIT - Connection is closed but waiting to ensure all packets are received
-
-    PID and Owner: the Process ID (PID) and the executable name of the process that owns this network connection.
-    Created: the timestamp when the network connection was established
-
-
-# Persistance
-## Volatility printkey plugin
-vol -f /home/analyst/memdump.mem --profile=Win10x64_17134 -g 0xf8031ce954d8 printkey -K software\microsoft\windows\currentversion\run
-
-
-    1. Hive path
-    2. Key name and type: "(S)" means that the key is a stable registry key permanently stored on the hard drive. If the key is marked as "(V)," it is a temporary/volatile registry key that exists only in memory.
-    3. Last updated: the date and time when the key was last modified.
-    4. Subkeys: contain a list of subkeys that exist under the inspected (parent) key, if any, along with their type, stable (S) or volatile (V).
-    The "Values" section displays key content/values. It's broken down into: 
-        5. Value name: usually the application name.
-        6. Value data: the key content. Usually, an executable or a command line.
-        7. Value type: Stable or volatile, similar to registry keys.
-        8. Value data type
-##  common persistence-related keys
-Run Keys:
-
-    SOFTWARE hive
-        Microsoft\Windows\CurrentVersion\Run
-        Microsoft\Windows\CurrentVersion\RunServices
-    NTUSER.dat hive
-        SOFTWARE\Microsoft\Windows\CurrentVersion\Run
-        SOFTWARE\Microsoft\Windows\CurrentVersion\RunServices
-
-        Programs that launch automatically each time the user logs in.
-         
-
-RunOnce Keys:
-
-    SOFTWARE hive
-        Microsoft\Windows\CurrentVersion\RunOnce
-        Microsoft\Windows\CurrentVersion\RunOnceEx\0001
-        Microsoft\Windows\CurrentVersion\RunOnceEx\0001\Depend
-        Microsoft\Windows\CurrentVersion\RunServicesOnce
-    NTUSER.dat hive
-        SOFTWARE\Microsoft\Windows\CurrentVersion\RunOnce
-        Software\Microsoft\Windows\CurrentVersion\RunServicesOnce
-
-Services Keys: 
-
-    SYSTEM hive
-        CurrentControlSet\Services
-
-Scheduled Tasks Keys: 
-
-    SOFTWARE hive
-        Microsoft\Windows NT\CurrentVersion\Schedule\TaskCache\Tasks 
-        Microsoft\Windows NT\CurrentVersion\Schedule\TaskCache\Tree
-
-AppInit_DLLs Key: 
-
-    SOFTWARE hive
-        Microsoft\Windows NT\CurrentVersion\Windows\AppInit_DLLs
-
-Winlogon Keys:
-
-    SOFTWARE hive
-        Microsoft\Windows NT\CurrentVersion\Winlogon\Userinit
-        Microsoft\Windows NT\CurrentVersion\Winlogon\Shell
-
-## Volatility winesap plugin
-
-Winesap is a third-party plugin that can help you automate inspecting persistence-related registry keys.
-volatility -f <memory_dump> --profile=<profile> -g 0xf803788a44d8 winesap
-
-vol -f /home/analyst/memdump.mem --profile=Win10x64_17134 -g 0xf8031ce954d8 winesap
-
-
-# Files
-## Master File Table (MFT)
-
-Here is a quick list of what you can do using the information you extract from the MFT file:
-    Recover malicious scripts: Malicious scripts are often small enough to have their content fit in the max size of the MFT record (1024 bytes). 
-    Build a timeline:  Any attack is a bunch of file activities (i.e., creating new files, accessing or deleting). 
-    Code execution: the MFT has records for all files, including OS files like Prefetch.
-
-## MFT parser plugin
-vol -f /home/analyst/memdump.mem --profile=Win10x64_17134 -g 0xf8031ce954d8 mftparser
-
-
-    $FILE_NAME ($FN): stores the name of the file or directory, along with additional metadata like timestamps (creation, modification, and access times), allocated size, and parent directory reference. This attribute assists in reconstructing the directory structure and analyzing file activities during investigations.
-     
-    $STANDARD_INFORMATION ($SI): contains essential metadata about a file or directory, such as file ownership, permissions, and more detailed timestamps (creation, modification, and access times).
-     
-    $DATA: responsible for storing the actual content of a file or directory in an NTFS file system. It can either store the data directly within the MFT entry (for small files ~600 bytes) as resident data or point to the data's location on the disk as non-resident data. This is useful in incident response as you can inspect the actual content of tiny suspicious files or scripts that an attacker may have used.
-
-
-## investigation of MFT 
-
-Here are some top locations where malicious files may reside on Windows:
-
-    C:\Windows\Temp: This is a temporary folder where applications and programs store temporary files. Malware may use this folder to store and execute its malicious code.
-    Downloads: As the name suggests, this folder stores downloaded files. Malware can easily trick users into downloading and executing malicious files from this folder.
-    Program Files and Program Files (x86): contain files and programs installed on your system. Malware may install itself in these folders to hide among legitimate files.
-    System32 and SysWOW64: contain important system files for the operating system to run. Malware may infect these files to gain control over the system.
-    AppData: This folder contains application data and settings for each user. Malware may store and execute malicious code in this folder to evade detection.
-    Startup: Malware may add itself to the Startup folder to execute automatically when the system starts up.
-    Documents: This is another common location where users store important files. Malware may infect these files to spread to other systems or hold them for ransom.
-## speed-up
-
-vol -f .\memory.dmp imageinfo
-vol -f .\memory.dmp --profile=Win10x64_17763 kdbgscan
-vol -f .\memory.dmp --profile=Win10x64_17763 -g 0xf80132d32de8 pslist
-
-$ python vol.py -f cve2011_0611.dmp --profile=WinXPSP3x86 evtlogs -v --save-evt -D output/
- python.exe .\evtxdumper.py --image .\Server.raw --profile Win10x64_17763 --kdbg 0xf80132d32de8 --outdir OUTDIR
+**Tip:** Event log records carved out of memory with `evtlogs --save-evt` can be opened directly in Event Viewer or parsed with [EvtxECmd](https://github.com/EricZimmerman/evtx) — useful when the on-disk `.evtx` files were cleared before the in-memory records were flushed. See [../Threat-Hunting/Sysmon.md](../Threat-Hunting/Sysmon.md) and [../Threat-Hunting/KQL-Threat-Hunting.md](../Threat-Hunting/KQL-Threat-Hunting.md) for what to hunt for once those logs are recovered.

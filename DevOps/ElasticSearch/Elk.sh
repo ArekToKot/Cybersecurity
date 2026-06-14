@@ -1,44 +1,56 @@
-#! /bin/bash
+#!/bin/bash
 
 # ============================================================
-# WSTEPNA KONFIGURACJA SYSTEMU
+# AIO Beats agent deployment script
+#
+# Installs and configures Metricbeat, Auditbeat, Packetbeat, and Filebeat on a
+# monitored host, pointing them at the ELK stack set up in Elk.md. Edit the
+# variables below for your environment, then run as root.
+# ============================================================
+
+export DEBIAN_FRONTEND=noninteractive
 
 AGENT_VERSION=9.1.2
 TIME_ZONE=Europe/Warsaw
 WWW_HOST=http://10.30.51.61:8080/configs
 ELASTIC_IP=10.2.2.10
-HOSTNAME=Fedora-02
+NEW_HOSTNAME=SERWER-04
 
-#strefa czasowa - ustawienie
+# Set the timezone
 sudo timedatectl set-timezone ${TIME_ZONE}
 
-# hostname - ustawienie
-hostnamectl set-hostname ${HOSTNAME}
-echo "127.0.0.1         ${HOSTNAME}" | tee -a /etc/hosts
-echo "127.0.1.1         ${HOSTNAME}" | tee -a /etc/hosts
+# Set the hostname
+hostnamectl set-hostname ${NEW_HOSTNAME}
 
+# Add a hosts entry for the Elasticsearch server
+echo "" >> /etc/hosts
+echo "${ELASTIC_IP}    ELASTIC-DISTRO-220600" >> /etc/hosts
 
-# dodanie hosta (adres serwera elastic)
-echo "" | tee -a /etc/hosts
-echo "${ELASTIC_IP}    ELASTIC-DISTRO-220600" | tee -a /etc/hosts
 
 # ============================================================
-# DODANIE REPOZYTORIUM ELASTIC
+# ADD ELASTIC REPOSITORY
 
-echo "[elastic-9.x]
-name=Elastic repository for 9.x packages
-baseurl=https://artifacts.elastic.co/packages/9.x/yum
-gpgcheck=1
-gpgkey=https://artifacts.elastic.co/GPG-KEY-elasticsearch
-enabled=1
-autorefresh=1
-type=rpm-md" | tee /etc/yum.repos.d/elastic.repo
+wget -qO - https://artifacts.elastic.co/GPG-KEY-elasticsearch | sudo apt-key add -
+sudo apt-get install apt-transport-https -y
+echo "deb https://artifacts.elastic.co/packages/9.x/apt stable main" | sudo tee -a /etc/apt/sources.list.d/elastic-9.x.list
+
+sudo apt-get update
+
+# Release the dpkg lock held by a background apt process (e.g. unattended-upgrades)
+# before the installs below run
+sleep 2
+sudo killall apt-get
+
+#sudo apt-get upgrade -y
+
+#sleep 2
+#sudo killall apt-get
 
 # ============================================================
-# INSTALACJA AGENTOW
+# AGENT INSTALLATION
 
 
-sudo yum install metricbeat-${AGENT_VERSION} -y
+sudo apt-get install metricbeat=${AGENT_VERSION} -y
 
 wget ${WWW_HOST}/ca.crt
 sudo mkdir /etc/elasticsearch/certs -p
@@ -54,7 +66,12 @@ sudo chmod go-w /etc/metricbeat/metricbeat.yml
 sudo systemctl start metricbeat
 sudo systemctl enable metricbeat
 
-sudo yum install auditbeat-${AGENT_VERSION} -y
+
+sleep 2
+sudo killall apt-get
+
+
+sudo apt-get install auditbeat=${AGENT_VERSION} -y
 
 rm auditbeat.yml 2> /dev/null
 wget ${WWW_HOST}/auditbeat.yml
@@ -67,7 +84,11 @@ sudo systemctl start auditbeat
 sudo systemctl enable auditbeat
 
 
-sudo yum install packetbeat-${AGENT_VERSION} -y
+sleep 2
+sudo killall apt-get
+
+
+sudo apt-get install packetbeat=${AGENT_VERSION} -y
 
 rm packetbeat.yml 2> /dev/null
 wget ${WWW_HOST}/packetbeat.yml
@@ -80,7 +101,11 @@ sudo systemctl start packetbeat
 sudo systemctl enable packetbeat
 
 
-sudo yum install filebeat-${AGENT_VERSION} -y
+sleep 2
+sudo killall apt-get
+
+
+sudo apt-get install filebeat=${AGENT_VERSION} -y
 
 rm filebeat.yml 2> /dev/null
 wget ${WWW_HOST}/filebeat.yml
@@ -89,7 +114,7 @@ sudo mv filebeat.yml /etc/filebeat/
 sudo chown root:root /etc/filebeat/filebeat.yml
 sudo chmod go-w /etc/filebeat/filebeat.yml
 
-# Aktywacja modulow - moze byc wyamagana dodatkowa konfiguracja plikow YML
+# Enable modules - may require additional YML configuration
 #sudo filebeat modules enable system
 #sudo filebeat modules enable auditd
 
